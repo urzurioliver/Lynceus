@@ -12,3 +12,4 @@ def mappeo():
 #Might use MongoDB
 #python -m uvicorn main:app --reload --port 8000
 #pip install fastapi "uvicorn[standard]" pip install fastapi
+#pip install dnspython
