@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 
 # 1. Esta es la URL que te da MongoDB Atlas
-uri = "mongodb+srv://<db_username>:16UXKwdBM351IpGl@cluster0.3kjiv9j.mongodb.net/?appName=Cluster0"
+uri = "mongodb+srv://49960759_db_user:Lynceus@cluster0.3kjiv9j.mongodb.net/?appName=Cluster0"
 
 # 2. Creamos el cliente: es la conexión con MongoDB
 client = MongoClient(uri)
@@ -16,3 +16,4 @@ mediciones = db["mediciones"]
 client.admin.command("ping")
 
 print("¡Conexión exitosa!")
+
