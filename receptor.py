@@ -15,7 +15,7 @@ def parse_csi_payload(data):
     
     # Reconstruir números complejos (H = Real + j*Imag)
     csi_complex = real + 1j * imag
-    
+    print (f"csi: {csi_complex}")
     # Extraer Amplitud |H| y Fase arg(H)
     amplitude = np.abs(csi_complex)
     phase = np.angle(csi_complex)
@@ -44,9 +44,9 @@ while True:
         num_subcarrieres = len(amplitude)
         promedio_amplitud = np.mean(amplitude)
         
-        print(f"Paquete recibido desde {addr[0]}:{addr[1]} | "
-              f"Subportadoras: {num_subcarrieres} | "
-              f"Amplitud media: {promedio_amplitud:.2f}")
+      #  print(f"Paquete recibido desde {addr[0]}:{addr[1]} | "
+       #       f"Subportadoras: {num_subcarrieres} | "
+        #      f"Amplitud media: {promedio_amplitud:.2f}")
 
         # AQUÍ PUEDES USAR 'amplitude' Y 'phase' PARA TU LÓGICA
         # Por ejemplo:
