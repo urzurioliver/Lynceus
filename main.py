@@ -8,7 +8,7 @@ load_dotenv()  # Carga las variables del archivo .
 url = os.getenv("mongourl")
 client = MongoClient(url)
 db = client["Lynceus"]
-mediciones = db["mediciones"]
+sesiones = db["sesiones"]
 
 app = FastAPI()
 #rutas
