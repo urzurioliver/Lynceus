@@ -1,4 +1,14 @@
 from fastapi import FastAPI
+import os
+from dotenv import load_dotenv
+from pymongo import MongoClient
+import json
+
+load_dotenv()  # Carga las variables del archivo .
+url = os.getenv("mongourl")
+client = MongoClient(url)
+db = client["Lynceus"]
+sesiones = db["sesiones"]
 
 app = FastAPI()
 #rutas
@@ -8,8 +18,3 @@ def mostrarinfo():
 @app.get("/mappeo")
 def mappeo():
     return {"message": f"acá podrás ver el mappeo, rpm: {rpm} y ritmo cardíaco"}
-#creo que debo primero hacer una base de datos no relacional jajan't 
-#Might use MongoDB
-#python -m uvicorn main:app --reload --port 8000
-#pip install fastapi "uvicorn[standard]" pip install fastapi
-#pip install dnspython
