@@ -1,0 +1,16 @@
+{
+    "_id": "65f1a2b3c4d5e6f7a8b9c0d1",
+    "nombre": "Sesión de rescate 1",
+    "fecha_inicio": "2026-10-09T14:30:00Z",
+    "activa": true,
+    "mediciones": [
+      {
+        "timestamp": "2026-10-09T14:30:01Z",
+        "presencia": true,
+        "rpm": 15.4,
+        "frecuencia_cardiaca": 70,
+        "ubicacion": {"x": 1.2, "y": 2.4},
+        "valor_onda": 0.045
+      }
+    ]
+  }
