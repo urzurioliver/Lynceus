@@ -3,6 +3,9 @@ import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
 import json
+from flask import Flask
+from flask_cors import CORS
+
 
 load_dotenv()  # Carga las variables del archivo .
 url = os.getenv("mongourl")
@@ -11,6 +14,7 @@ db = client["Lynceus"]
 sesiones = db["sesiones"]
 
 app = FastAPI()
+CORS(app) 
 #rutas
 @app.get("/")
 def mostrarinfo():
@@ -18,3 +22,4 @@ def mostrarinfo():
 @app.get("/mappeo")
 def mappeo():
     return {"message": f"acá podrás ver el mappeo, rpm: {rpm} y ritmo cardíaco"}
+#hacer en compu ort pip install flask-cors
