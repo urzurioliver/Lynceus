@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import os
 from dotenv import load_dotenv
-from pymongo import MongoClient
+from pymongo import DESCENDING, MongoClient
 import json
 from flask import Flask
 from flask_cors import CORS
@@ -22,4 +22,3 @@ def mostrarinfo():
 @app.get("/mappeo")
 def mappeo():
     return {"message": f"acá podrás ver el mappeo, rpm: {rpm} y ritmo cardíaco"}
-#hacer en compu ort pip install flask-cors

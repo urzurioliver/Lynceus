@@ -2,11 +2,12 @@ import collections
 import socket
 from CSIKit.filters.butterworth import bandpass
 import numpy as np
+from scipy.signal import find_peaks
 
 buffer_temporal = collections.deque(maxlen=100)
 
 
-def parse_csi_payload(data):
+def parseCsi(data):
   # Convertir el buffer de bytes a enteros de 8 bits con signo
   csiBase = np.frombuffer(data, dtype=np.int8)
 
@@ -38,25 +39,23 @@ while escuchando == True:
     if len(data) < 10:
       continue
 
-    fasePromedio = parse_csi_payload(data)
+    fasePromedio = parseCsi(data)
     buffer_temporal.append(fasePromedio)
 
     # 3. filtro de CSIKit
     # bandpass(datos, lowcut_hz, highcut_hz, fs_hz, order)
     if len(buffer_temporal) >= 100:  # con menos lecturas tira datos basura
-      onda_limpia = bandpass(  # funcion de csikit para filtrar
+      ondaLimpia = bandpass(  # funcion de csikit para filtrar
           np.array(buffer_temporal),
           lowcut=0.1,
           highcut=0.5,
           fs=20,
           order=2,  # cuts medidos en hertz. 0,1 es 6rpm, 0,5 30
       )
+def CalcuarRPM (ondaLimpia, fs =20):
 
-      # El último valor indica el estado del pecho:
-      # Valor sube -> Pecho se infla
-      # Valor baja -> Pecho se defla
-      valor_actual = onda_limpia[-1]
-
+  return 
+  
   except KeyboardInterrupt:
     print("\nDeteniendo escucha UDP...")
     escuchando = False
