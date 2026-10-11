@@ -3,6 +3,7 @@ import socket
 from CSIKit.filters.butterworth import bandpass # type: ignore
 import numpy as np
 from scipy.signal import find_peaks
+from db import guardar_medicion, sesionActiva
 
 buffer_temporal = collections.deque(maxlen=100)
 presence = False
@@ -72,6 +73,4 @@ while escuchando == True:
   except Exception as e:
     print(f"Error procesando paquete: {e}")
 
-def agregarMedicion (id, ):
-  return
 sock.close()

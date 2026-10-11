@@ -1,17 +1,7 @@
 from fastapi import FastAPI
-import os
-from dotenv import load_dotenv
-from pymongo import DESCENDING, MongoClient
-import json
+from db import detenerSesion, sesionActiva, nuevaSesion, guardar_medicion
 from flask import Flask
 from flask_cors import CORS
-
-
-load_dotenv()  # Carga las variables del archivo .
-url = os.getenv("mongourl")
-client = MongoClient(url)
-db = client["Lynceus"]
-sesiones = db["sesiones"]
 
 app = FastAPI()
 CORS(app) 
