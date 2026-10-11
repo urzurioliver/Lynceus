@@ -64,8 +64,13 @@ while escuchando == True:
           order=2,  # cuts medidos en hertz. 0,1 es 6rpm, 0,5 30
       )
       presencia, rpm = CalcularRPM(ondaLimpia, fs=20)
-      print(f"Presencia: {presencia} | RPM: {rpm}")
 
+      sesion_activa = sesionActiva()
+      if sesion_activa:
+        guardar_medicion(str(sesion_activa["_id"]), presencia, rpm)
+        print(f"guardado. Presencia: {presencia} | RPM: {rpm}")
+      else:
+        print(f"No hay sesión activa")
   except KeyboardInterrupt:
     print("\nDeteniendo escucha UDP...")
     escuchando = False

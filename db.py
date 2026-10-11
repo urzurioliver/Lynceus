@@ -33,6 +33,19 @@ def detenerSesion():
 def sesionActiva():
   return db.sesiones.find_one({"activa": True})
 
+def mostrarSesiones():
+  sesiones = db.sesiones.find().sort("fecha_inicio", -1)
+  return [
+      {
+          "id": str(sesion["_id"]),
+          "nombre": sesion["nombre"],
+          "fecha_inicio": sesion["fecha_inicio"],
+          "fecha_fin": sesion.get("fecha_fin"),
+          "activa": sesion["activa"],
+          "mediciones": sesion["mediciones"],
+      }
+      for sesion in sesiones
+  ]
 def guardar_medicion(sesion_id, presencia, rpm):
   medicion = {
       "medicion_id": str(ObjectId()),

@@ -1,14 +1,49 @@
 from fastapi import FastAPI
-from db import detenerSesion, sesionActiva, nuevaSesion, guardar_medicion
-from flask import Flask
-from flask_cors import CORS
+from db import (detenerSesion, sesionActiva, nuevaSesion, guardar_medicion, mostrarSesiones)
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
-CORS(app) 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 #rutas
-@app.get("/")
-def mostrarinfo():
-    return {"message": "Lynceus es un proyecto que permite la detección de vida dentro de derrumbes u otros terrenos de rescatismo"}
-@app.get("/mappeo")
-def mappeo():
-    return {"message": f"acá podrás ver el mappeo, rpm: {rpm} y ritmo cardíaco"}
+@app.post("/sesiones/nueva")
+def postNuevaSesion(nombre: str = "prueba"):
+  sesion_id = nuevaSesion(nombre)
+  return {
+      "mensaje": "Sesión iniciada correctamente",
+      "sesion_id": sesion_id,
+  }
+@app.get("/live")
+def getSesionActiva():
+  sesion_activa = sesionActiva()
+
+  if not sesion_activa or not sesion_activa.get("mediciones"):
+    return {
+        "activa": False,
+        "presencia": False,
+        "rpm": 0.0,
+        "frecuencia_cardiaca": 0,
+        "ubicacion": {"x": 0.0, "y": 0.0},
+        "valor_onda": 0.0,
+        "timestamp": None,
+    }
+
+  ultima_medicion = sesion_activa["mediciones"][-1] #-1 agarra el ultimo
+  ultima_medicion["activa"] = True
+  ultima_medicion["sesion_id"] = str(sesion_activa["_id"])
+  return ultima_medicion
+
+@app.post("/api/sesiones/detener")
+def postDetenerSesion():
+  detenerSesion()
+  return {"mensaje": "Sesión finalizada"}
+
+@app.get("/sesiones/historial")
+def postHistorial():
+  return mostrarSesiones()
+
