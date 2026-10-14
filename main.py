@@ -27,10 +27,6 @@ def getSesionActiva():
         "activa": False,
         "presencia": False,
         "rpm": 0.0,
-        "frecuencia_cardiaca": 0,
-        "ubicacion": {"x": 0.0, "y": 0.0},
-        "valor_onda": 0.0,
-        "timestamp": None,
     }
 
   ultima_medicion = sesion_activa["mediciones"][-1] #-1 agarra el ultimo
@@ -38,7 +34,7 @@ def getSesionActiva():
   ultima_medicion["sesion_id"] = str(sesion_activa["_id"])
   return ultima_medicion
 
-@app.post("/api/sesiones/detener")
+@app.post("/sesiones/detener")
 def postDetenerSesion():
   detenerSesion()
   return {"mensaje": "Sesión finalizada"}

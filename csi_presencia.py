@@ -2,6 +2,7 @@ import collections
 import socket
 from CSIKit.filters.butterworth import bandpass # type: ignore
 import numpy as np
+import time
 from scipy.signal import find_peaks
 from db import guardar_medicion, sesionActiva
 
@@ -34,8 +35,8 @@ def CalcularRPM (ondaLimpia, fs =20):
   picos, _ = find_peaks(ondaLimpia, distance=fs , prominence=0.02) #hace que la distancia entre picos tenga 1seg de diferencia y que el tamaño de la cresta o valle sea minimo 0,2
   #devuelve los picos y otro dato irrelevant eque lo saco con _
   if len(picos)<2:
-    presence = False, 0.0
-    return presence
+    presence=False
+    return presence, 0.0
   else:
     distanciaPromedio = np.mean(np.diff(picos))/fs
     rpm = 60/distanciaPromedio
@@ -64,13 +65,18 @@ while escuchando == True:
           order=2,  # cuts medidos en hertz. 0,1 es 6rpm, 0,5 30
       )
       presencia, rpm = CalcularRPM(ondaLimpia, fs=20)
+      tiempo_actual = time.time()
 
-      sesion_activa = sesionActiva()
-      if sesion_activa:
-        guardar_medicion(str(sesion_activa["_id"]), presencia, rpm)
-        print(f"guardado. Presencia: {presencia} | RPM: {rpm}")
-      else:
-        print(f"No hay sesión activa")
+      # Solo entra a la base de datos si pasó 1 segundo desde la última vez
+      if tiempo_actual - ultimo_guardado >= 1.0:
+        ultimo_guardado = tiempo_actual
+        sesion_activa = sesionActiva()
+        
+        if sesion_activa:
+          guardar_medicion(str(sesion_activa["_id"]), presencia, rpm)
+          print(f"guardado. Presencia: {presencia} | RPM: {rpm}")
+        else:
+          print(f"No hay sesión activa")
   except KeyboardInterrupt:
     print("\nDeteniendo escucha UDP...")
     escuchando = False
