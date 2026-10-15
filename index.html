@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LYNCEUS</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- PANTALLA 1: INICIO -->
+  <section id="screen-1" class="screen active">
+    <div class="card-center">
+      <!-- Logo vectorial grande (910x256px) -->
+      <img src="assets/logogrande.svg" alt="LYNCEUS Logo" class="logo-img-main">
+      <!-- Botón Iniciar (800x105px) -->
+      <button id="btn-iniciar" class="btn-dark">Iniciar</button>
+    </div>
+  </section>
+
+  <!-- PANTALLA 2: MONITOREO EN TIEMPO REAL -->
+  <section id="screen-2" class="screen">
+    <header class="top-bar">
+      <!-- Logo LYNCEUS a la izquierda -->
+      <button class="btn-light logo-btn" onclick="goToHome()">
+        <img src="assets/logochico.svg" alt="LYNCEUS" class="logo-img-small">
+      </button>
+
+      <!-- Botón Sesiones alineado a la derecha en el mismo renglón -->
+      <button id="btn-sesiones" class="btn-light btn-nav-top-right">
+        <span>Sesiones:</span> ☰
+      </button>
+    </header>
+
+    <main class="main-content">
+      <!-- Campo Grande: Radar (936x618px) -->
+      <div class="campo-grande">
+        <div id="radar-canvas">
+          <div id="origin-point"></div>
+          <div id="person-dot"></div>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Caja de Datos Live -->
+      <aside class="columna-derecha">
+        <div class="campo-chico">
+          <div class="frame-datos">
+            <h3>Datos:</h3>
+            <div class="divider-line"></div>
+            <div class="metric-row"><label>Distancia:</label> <span id="live-dist">00.00m</span></div>
+            <div class="metric-row"><label>RPM:</label> <span id="live-rpm">000</span></div>
+            <div class="metric-row"><label>PPM:</label> <span id="live-ppm">000</span></div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </section>
+
+  <!-- PANTALLA 3: HISTORIAL DE SESIONES -->
+  <section id="screen-3" class="screen">
+    <header class="top-bar">
+      <button class="btn-light logo-btn" onclick="goToHome()">
+        <img src="assets/logochico.svg" alt="LYNCEUS" class="logo-img-small">
+      </button>
+    </header>
+
+    <main class="main-content">
+      <div class="campo-grande placeholder-view">
+        <div id="radar-canvas-static"></div>
+      </div>
+
+      <!-- Columna extendida hacia arriba -->
+      <aside class="columna-derecha-full">
+        <div class="campo-chico">
+          <div class="titulos-list">
+            <h3>Sesiones:</h3>
+            <div class="divider-line"></div>
+          </div>
+          <div id="sessions-list-p3" class="list-container"></div>
+        </div>
+
+        <!-- Botón Datos minimizado abajo -->
+        <button id="btn-datos" class="btn-light btn-nav-separado">
+          <span>Datos:</span> ☰
+        </button>
+      </aside>
+    </main>
+  </section>
+
+  <!-- PANTALLA 4: DETALLE DE SESIÓN Y RENOMBRADO -->
+  <section id="screen-4" class="screen">
+    <header class="top-bar">
+      <button class="btn-light logo-btn" onclick="goToHome()">
+        <img src="assets/logochico.svg" alt="LYNCEUS" class="logo-img-small">
+      </button>
+      <!-- Campo para ingresar nombre -->
+      <input type="text" id="input-session-name" class="input-name-center" placeholder="Ingresar nombre..." />
+    </header>
+
+    <main class="main-content">
+      <div class="campo-grande table-view">
+        <table class="telemetry-table">
+          <thead>
+            <tr>
+              <th>Hora:</th>
+              <th>Distancia:</th>
+              <th>RPM:</th>
+              <th>PPM:</th>
+            </tr>
+          </thead>
+          <tbody id="telemetry-rows"></tbody>
+        </table>
+      </div>
+
+      <!-- Columna extendida hacia arriba -->
+      <aside class="columna-derecha-full">
+        <div class="campo-chico">
+          <div class="titulos-list">
+            <h3>Sesiones:</h3>
+            <div class="divider-line"></div>
+          </div>
+          <div id="sessions-list-p4" class="list-container"></div>
+        </div>
+
+        <button id="btn-datos-p4" class="btn-light btn-nav-separado">
+          <span>Datos:</span> ☰
+        </button>
+      </aside>
+    </main>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
