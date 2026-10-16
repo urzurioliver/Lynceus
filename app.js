@@ -3,10 +3,13 @@ let livePollInterval = null;
 let currentSelectedSessionId = null;
 let sessionsData = [];
 
-// Transición fluida entre pantallas (1, 2, 3 o 4)
+// Transición fluida entre pantallas (1, 2, 3 o 4) con reinicio de animación
 function showScreen(screenNum) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(`screen-${screenNum}`).classList.add('active');
+  const targetScreen = document.getElementById(`screen-${screenNum}`);
+  if (targetScreen) {
+    targetScreen.classList.add('active');
+  }
 }
 
 // Botón Logo: Regresa siempre a la Pantalla 1 (Inicio)
@@ -107,6 +110,7 @@ async function loadAndRenderSessions() {
 
 function renderSessionList(containerId, sessions) {
   const container = document.getElementById(containerId);
+  if (!container) return;
   container.innerHTML = '';
 
   sessions.forEach(s => {
@@ -132,46 +136,53 @@ function selectSession(sessionId) {
   if (!session) return;
 
   const nameInput = document.getElementById('input-session-name');
-  nameInput.value = session.nombre !== "Nueva Sesión" ? session.nombre : "";
+  if (nameInput) {
+    nameInput.value = session.nombre !== "Nueva Sesión" ? session.nombre : "";
+  }
 
   const tbody = document.getElementById('telemetry-rows');
-  tbody.innerHTML = '';
+  if (tbody) {
+    tbody.innerHTML = '';
 
-  // Filtra los últimos 7 registros de telemetría
-  const last7Measurements = (session.mediciones || []).slice(-7);
+    // Filtra los últimos 7 registros de telemetría
+    const last7Measurements = (session.mediciones || []).slice(-7);
 
-  last7Measurements.forEach(m => {
-    const time = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    tbody.innerHTML += `
-      <tr>
-        <td>${time}</td>
-        <td>${m.distancia ? m.distancia.toFixed(2) + 'm' : '00.00m'}</td>
-        <td>${m.rpm || 0}</td>
-        <td>${m.ppm || 0}</td>
-      </tr>
-    `;
-  });
+    last7Measurements.forEach(m => {
+      const time = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      tbody.innerHTML += `
+        <tr>
+          <td>${time}</td>
+          <td>${m.distancia ? m.distancia.toFixed(2) + 'm' : '00.00m'}</td>
+          <td>${m.rpm || 0}</td>
+          <td>${m.ppm || 0}</td>
+        </tr>
+      `;
+    });
+  }
 
   loadAndRenderSessions();
   showScreen(4);
 }
 
 // Renombrado dinámico mediante el campo de texto superior
-document.getElementById('input-session-name').addEventListener('change', async (e) => {
-  const newName = e.target.value.trim();
-  if (!newName || !currentSelectedSessionId) return;
+const inputSessionName = document.getElementById('input-session-name');
+if (inputSessionName) {
+  inputSessionName.addEventListener('change', async (e) => {
+    const newName = e.target.value.trim();
+    if (!newName || !currentSelectedSessionId) return;
 
-  try {
-    await fetch(`${API_URL}/sesiones/${currentSelectedSessionId}/nombre?nombre=${encodeURIComponent(newName)}`, {
-      method: 'PUT'
-    });
-  } catch (e) {
-    console.warn("No se pudo persistir el nombre en el servidor.");
-  }
+    try {
+      await fetch(`${API_URL}/sesiones/${currentSelectedSessionId}/nombre?nombre=${encodeURIComponent(newName)}`, {
+        method: 'PUT'
+      });
+    } catch (e) {
+      console.warn("No se pudo persistir el nombre en el servidor.");
+    }
 
-  const session = sessionsData.find(s => s.id === currentSelectedSessionId);
-  if (session) {
-    session.nombre = newName;
-    loadAndRenderSessions();
-  }
-});
+    const session = sessionsData.find(s => s.id === currentSelectedSessionId);
+    if (session) {
+      session.nombre = newName;
+      loadAndRenderSessions();
+    }
+  });
+}
