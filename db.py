@@ -3,10 +3,19 @@ from datetime import datetime, timezone
 from bson import ObjectId
 from dotenv import load_dotenv
 from pymongo import MongoClient
+import certifi
+
 
 load_dotenv()  # Carga las variables del archivo .
 url = os.getenv("mongourl")
-client = MongoClient(url)
+client = MongoClient(url, tlsCAFile=certifi.where())
+try:
+    client.admin.command("ping")
+    print("Connected successfully")
+except Exception as e:
+    raise Exception(
+        "The following error occurred: ", e)
+
 db = client["Lynceus"]
 sesiones = db["sesiones"]
 

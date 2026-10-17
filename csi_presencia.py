@@ -6,7 +6,7 @@ import numpy as np
 from scipy.signal import find_peaks
 
 # Comentado mientras pruebas sin conexión a BD
-# from db import guardar_medicion, sesionActiva
+from db import guardar_medicion, sesionActiva
 
 buffer_temporal = collections.deque(maxlen=100)
 
@@ -64,18 +64,18 @@ while escuchando:
       print(f"Presencia: {presencia} | RPM: {rpm}")
       ultimo_print = tiempo_actual
       # Muestra los datos en consola cada vez que calcula
-      #print(f"Presencia: {presencia} | RPM: {rpm}")
+      print(f"Presencia: {presencia} | RPM: {rpm}")
 
       # Lógica de BD (descomentar cuando tengas conexión a Internet/MongoDB)
-      # tiempo_actual = time.time()
-      # if tiempo_actual - ultimo_guardado >= 1.0:
-      #     ultimo_guardado = tiempo_actual
-      #     sesion_activa = sesionActiva()
-      #     if sesion_activa:
-      #         guardar_medicion(str(sesion_activa["_id"]), presencia, rpm)
-      #         print(f"Guardado en BD -> Presencia: {presencia} | RPM: {rpm}")
-      #     else:
-      #         print("No hay sesión activa")
+      tiempo_actual = time.time()
+      if tiempo_actual - ultimo_guardado >= 1.0:
+           ultimo_guardado = tiempo_actual
+           sesion_activa = sesionActiva()
+           if sesion_activa:
+               guardar_medicion(str(sesion_activa["_id"]), presencia, rpm)
+               print(f"Guardado en BD -> Presencia: {presencia} | RPM: {rpm}")
+           else:
+               print("No hay sesión activa")
 
   except KeyboardInterrupt:
     print("\nDeteniendo escucha UDP...")
