@@ -48,7 +48,7 @@ document.getElementById('btn-datos-p4').addEventListener('click', () => {
 });
 
 // --- POLLING DE DATOS EN TIEMPO REAL (PANTALLA 2) ---
-function startLivePolling() {
+function startLivePolling(interval = 1000) {
   stopLivePolling();
   livePollInterval = setInterval(async () => {
     try {

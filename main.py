@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from db import (detenerSesion, sesionActiva, nuevaSesion, guardar_medicion, mostrarSesiones)
+from db import (detenerSesion, sesionActiva, nuevaSesion, guardar_medicion, mostrarSesiones, renombrarSesion)
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -42,4 +42,9 @@ def postDetenerSesion():
 @app.get("/sesiones/historial")
 def postHistorial():
   return mostrarSesiones()
+
+@app.put("/sesiones/{sesion_id}/nombre")
+def putNombre(sesion_id: str, nombre: str):
+  renombrarSesion(sesion_id, nombre)
+  return {"mensaje": "Nombre actualizado"}
 

@@ -5,22 +5,20 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 import certifi
 
-
-load_dotenv()  # Carga las variables del archivo .
+load_dotenv()
 url = os.getenv("mongourl")
-client = MongoClient(url, tlsCAFile=certifi.where())
+client = MongoClient(url, serverSelectionTimeoutMS=5000, tlsCAFile=certifi.where())
 try:
-    client.admin.command("ping")
-    print("Connected successfully")
+  client.admin.command("ping")
+  print("Connected successfully")
 except Exception as e:
-    raise Exception(
-        "The following error occurred: ", e)
+  raise Exception("The following error occurred: ", e)
 
 db = client["Lynceus"]
 sesiones = db["sesiones"]
 
 def nuevaSesion(nombre="Nueva Sesión"):
-  # Desactivar cualquier otra sesión previa 
+  # Desactivar cualquier otra sesión previa
   db.sesiones.update_many({"activa": True}, {"$set": {"activa": False}})
 
   nueva_sesion = {
@@ -40,10 +38,15 @@ def detenerSesion():
   )
 
 def sesionActiva():
-  return db.sesiones.find_one({"activa": True})
+  # Solo trae la última medición, no el arreglo completo
+  return db.sesiones.find_one({"activa": True}, {"mediciones": {"$slice": -1}})
 
 def mostrarSesiones():
-  sesiones = db.sesiones.find().sort("fecha_inicio", -1)
+  cursor = (
+      db.sesiones.find({}, {"mediciones": {"$slice": -7}})
+      .sort("fecha_inicio", -1)
+      .limit(3)
+  )
   return [
       {
           "id": str(sesion["_id"]),
@@ -53,14 +56,22 @@ def mostrarSesiones():
           "activa": sesion["activa"],
           "mediciones": sesion["mediciones"],
       }
-      for sesion in sesiones
+      for sesion in cursor
   ]
-def guardar_medicion(sesion_id, presencia, rpm):
+
+def renombrarSesion(sesion_id, nombre):
+  db.sesiones.update_one(
+      {"_id": ObjectId(sesion_id)},
+      {"$set": {"nombre": nombre}}
+  )
+
+def guardar_medicion(sesion_id, presencia, rpm, **extra):
   medicion = {
       "medicion_id": str(ObjectId()),
       "timestamp": datetime.now(timezone.utc),
       "presencia": presencia,
-      "rpm": rpm
+      "rpm": rpm,
+      **extra,
   }
   db.sesiones.update_one(
       {"_id": ObjectId(sesion_id)},
