@@ -10,9 +10,9 @@ url = os.getenv("mongourl")
 client = MongoClient(url, serverSelectionTimeoutMS=5000, tlsCAFile=certifi.where())
 try:
   client.admin.command("ping")
-  print("Connected successfully")
+  print("Conectado exitosamente a MongoDB Atlas")
 except Exception as e:
-  raise Exception("The following error occurred: ", e)
+  print(f"ADVERTENCIA: No se pudo conectar a MongoDB Atlas ({e})")
 
 db = client["Lynceus"]
 sesiones = db["sesiones"]
