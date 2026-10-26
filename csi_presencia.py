@@ -67,14 +67,14 @@ while escuchando:
 
       # Lógica de BD (descomentar cuando tengas conexión a Internet/MongoDB)
       tiempo_actual = time.time()
-      #if tiempo_actual - ultimo_guardado >= 1.0:
-           #ultimo_guardado = tiempo_actual
-           #sesion_activa = sesionActiva()
-           #if sesion_activa:
-               #guardar_medicion(str(sesion_activa["_id"]), presencia, rpm) 
-               #print(f"Guardado en BD -> Presencia: {presencia} | RPM: {rpm}")
-           #else:
-               #print("No hay sesión activa")
+      if tiempo_actual - ultimo_guardado >= 1.0:
+           ultimo_guardado = tiempo_actual
+           sesion_activa = sesionActiva()
+           if sesion_activa:
+               guardar_medicion(str(sesion_activa["_id"]), presencia, rpm) 
+               print(f"Guardado en BD -> Presencia: {presencia} | RPM: {rpm}")
+           else:
+               print("No hay sesión activa")
 
   except KeyboardInterrupt:
     print("\nDeteniendo escucha UDP...")
