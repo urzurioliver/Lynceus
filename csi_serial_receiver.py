@@ -1,25 +1,4 @@
-
 #!/usr/bin/env python3
-"""
-csi_receiver.py - Receptor de CSI por puerto serie (ESP32-S3, firmware RuView modificado)
-
-
-Uso:
-    python csi_receiver.py                        -> usa el PUERTO configurado arriba (COM6)
-    python csi_receiver.py --list                 -> lista los puertos y te dice cual usar
-    python csi_receiver.py --port COM11           -> modo normal: muestra estado y guarda un .npz al salir (Ctrl+C)
-    python csi_receiver.py --port COM11 --raw     -> solo vuelca los bytes que llegan (para verificar el cable)
-    python csi_receiver.py --port COM11 --udp 127.0.0.1:5005   -> ademas reenvia cada frame CSI por UDP
-
-
-Requiere: pip install pyserial numpy
-
-
-Formato de cada trama que manda el ESP32 por el cable:
-    A5 5A | largo (u16) | tiempo_us (u32) | payload (frame CSI de 20 bytes de header + I/Q) | CRC16-CCITT (u16)
-El CRC se calcula sobre largo + tiempo + payload (init 0xFFFF, poly 0x1021).
-Todo lo que no sea una trama valida (texto de arranque, 'SERIAL OK', 'HB', basura) se descarta y se cuenta.
-"""
 import argparse
 import binascii
 import datetime
@@ -27,18 +6,14 @@ import socket
 import struct
 import sys
 import time
-
-
 import numpy as np
 import serial
 from serial.tools import list_ports
-
 
 # ---- CONFIGURACION: editar aca ------------------------------------------------
 PUERTO = "COM11"      # puerto COM del conversor USB-serie donde esta conectado el ESP32
 BAUD = 460800       # debe coincidir con SER_BAUD de serial_sender.c
 # ------------------------------------------------------------------------------
-
 
 SYNC = b"\xA5\x5A"
 MAX_PAYLOAD = 2048
@@ -46,18 +21,13 @@ CSI_MAGIC = 0xC5110001
 HDR_FMT = "<IBBHIIbbBB"      # magic, nodo, antenas, subportadoras, MHz, seq, rssi, ruido, ppdu, flags
 HDR_LEN = 20
 
-
-
-
 class Deframer:
     """Convierte el flujo de bytes del puerto serie en tramas validas."""
-
 
     def __init__(self):
         self.buf = bytearray()
         self.bad_crc = 0
         self.junk = 0
-
 
     def feed(self, data):
         self.buf += data
@@ -91,9 +61,6 @@ class Deframer:
                 del self.buf[:2]          # falso sync: seguir buscando justo despues
         return out
 
-
-
-
 def parse_csi(payload):
     """Devuelve un dict con el frame CSI, o None si el payload no es un frame CSI valido."""
     if len(payload) < HDR_LEN:
@@ -107,9 +74,6 @@ def parse_csi(payload):
     raw = np.frombuffer(iq, dtype=np.int8).astype(np.float32)
     z = (raw[1::2] + 1j * raw[0::2]).reshape(nant, nsub)[0]     # ESP-IDF entrega [imag, real]
     return dict(nodo=nodo, nsub=nsub, freq=freq, seq=seq, rssi=rssi, ruido=ruido, flags=flags, z=z)
-
-
-
 
 def listar_puertos():
     puertos = [p for p in list_ports.comports() if "BTHENUM" not in (p.hwid or "")]
@@ -126,9 +90,6 @@ def listar_puertos():
             tipo = "no identificado"
         print(f"  {p.device:8s} {p.description}\n           {p.hwid}\n           -> {tipo}\n")
     print("Corre de nuevo con:  python csi_receiver.py --port COMx")
-
-
-
 
 def diagnostico(n_bytes, tail, hb, ok_seen):
     if n_bytes == 0:
@@ -150,9 +111,6 @@ def diagnostico(n_bytes, tail, hb, ok_seen):
     return ("Llegan bytes sin formato: velocidad (baud) distinta entre firmware y receptor, o ruido. "
             "Verifica SER_BAUD en serial_sender.c y --baud aca.")
 
-
-
-
 def main():
     ap = argparse.ArgumentParser(description="Receptor de CSI por serie")
     ap.add_argument("--port", default=PUERTO, help="puerto COM (por defecto el de PUERTO arriba)")
@@ -164,11 +122,9 @@ def main():
     ap.add_argument("--seconds", type=float, default=0, help="parar solo a los N segundos (0 = hasta Ctrl+C)")
     args = ap.parse_args()
 
-
     if args.list or not args.port:
         listar_puertos()
         return
-
 
     ser = serial.Serial()
     ser.port, ser.baudrate, ser.timeout = args.port, args.baud, 0.1
@@ -180,17 +136,14 @@ def main():
         print("Cierra cualquier monitor u otro script que use ese puerto y revisa el numero de COM.")
         return
 
-
     udp = dest = None
     if args.udp:
         host, port = args.udp.rsplit(":", 1)
         dest = (host, int(port))
         udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-
     print(f"Escuchando {args.port} a {args.baud} baud. Ctrl+C para parar. "
           f"Si no ves nada, apreta RESET en la placa con esto ya corriendo.\n")
-
 
     dfr = Deframer()
     t_list, seq_list, rssi_list, csi_list = [], [], [], []
@@ -205,7 +158,6 @@ def main():
     i_bytes = i_frames = 0
     last_rssi = None
     t0 = t_int = time.time()
-
 
     try:
         while True:
@@ -242,8 +194,9 @@ def main():
                         i_frames += 1
                         last_rssi = f["rssi"]
                         if udp:
-                            udp.sendto(payload, dest)
-
+                            # CAMBIO: antes era udp.sendto(payload, dest). Ahora se antepone el tiempo del ESP32
+                            # (8 bytes, double, segundos) para que csi_presencia.py pueda remuestrear.
+                            udp.sendto(struct.pack("<d", t_list[-1]) + payload, dest)
 
             if not args.raw and now - t_int >= 2.0:
                 dt = now - t_int
@@ -259,14 +212,12 @@ def main():
                 i_bytes = i_frames = 0
                 t_int = now
 
-
             if args.seconds and now - t0 >= args.seconds:
                 break
     except KeyboardInterrupt:
         pass
     finally:
         ser.close()
-
 
     if t_list:
         nombre = args.out or datetime.datetime.now().strftime("csi_%Y%m%d_%H%M%S.npz")
@@ -280,9 +231,6 @@ def main():
         print("Leer despues:  d = np.load('%s'); d['csi'].shape, d['t_s']" % nombre)
     elif not args.raw:
         print("\nNo se recibio ningun frame CSI valido, no se guardo nada.")
-
-
-
 
 if __name__ == "__main__":
     main()

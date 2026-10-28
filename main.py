@@ -22,12 +22,11 @@ def postNuevaSesion(nombre: str = "prueba"):
 def getSesionActiva():
   sesion_activa = sesionActiva()
 
-  if not sesion_activa or not sesion_activa.get("mediciones"):
-    return {
-        "activa": False,
-        "presencia": False,
-        "rpm": 0.0,
-    }
+  if not sesion_activa:
+    return {"activa": False, "presencia": False, "rpm": 0.0}
+  if not sesion_activa.get("mediciones"):
+    return {"activa": True, "presencia": False, "rpm": 0.0,
+          "sesion_id": str(sesion_activa["_id"])}
 
   ultima_medicion = sesion_activa["mediciones"][-1] #-1 agarra el ultimo
   ultima_medicion["activa"] = True
@@ -47,4 +46,3 @@ def postHistorial():
 def putNombre(sesion_id: str, nombre: str):
   renombrarSesion(sesion_id, nombre)
   return {"mensaje": "Nombre actualizado"}
-
