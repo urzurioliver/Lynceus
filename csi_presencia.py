@@ -16,7 +16,7 @@ from db import guardar_medicion, sesionActiva
 
 # --- NUEVO: constantes del remuestreo ---
 FS = 20             # muestras por segundo parejas tras remuestrear (igual al fs=20 de más abajo)
-VENTANA_S = 30      # segundos de señal que se analizan (antes: 100 muestras ~ 4 s)
+VENTANA_S = 20      # segundos de señal que se analizan (antes: 100 muestras ~ 4 s)
 MAX_HUECO_S = 2.0   # si pasan más segundos sin frames, se considera un corte
 
 # NUEVO: CSI crudo (carpeta junto a este archivo, un archivo por minuto)
@@ -49,21 +49,27 @@ def parseCsi(f):
     return None
   return float(amp.mean())
 
-
-# --- NUEVO: remuestrea a tiempos parejos usando el tiempo real de cada frame ---
 def prepararOnda(muestras):
-  t = np.array([m[0] for m in muestras])
-  v = np.array([m[1] for m in muestras])
-  duracion = t[-1] - t[0]
-  if duracion < VENTANA_S * 0.9:
-    return None, f"juntando señal ({duracion:.0f}/{VENTANA_S} s)"
-  hueco = np.diff(t).max()
-  if hueco > MAX_HUECO_S:
-    return None, f"hubo un corte de {hueco:.1f} s dentro de la ventana de {VENTANA_S} s"
-  t_new = np.arange(t[0], t[-1], 1 / FS)
-  onda = np.interp(t_new, t, v)
-  return (onda - onda.mean()) / onda.mean(), ""   # variación relativa, centrada en 0
+    t = np.array([m[0] for m in muestras])
+    v = np.array([m[1] for m in muestras])
 
+    # Si hubo cortes largos, me quedo solo con el tramo posterior al último corte
+    huecos = np.where(np.diff(t) > MAX_HUECO_S)[0]
+    if len(huecos):
+        t = t[huecos[-1] + 1:]
+        v = v[huecos[-1] + 1:]
+
+    if len(t) < 2:
+        return None, "juntando señal tras un corte (0 s)"
+
+    duracion = t[-1] - t[0]
+    if duracion < VENTANA_S:
+        return None, f"juntando señal continua tras un corte ({duracion:.0f}/{VENTANA_S} s)"
+
+    # Remuestreo a ritmo fijo (las muestras llegan a intervalos irregulares)
+    t_new = np.arange(t[0], t[-1], 1 / FS)
+    onda = np.interp(t_new, t, v)
+    return (onda - onda.mean()) / onda.mean(), ""
 
 def CalcularRPM(ondaLimpia, fs=20):
   picos, _ = find_peaks(ondaLimpia, distance=fs, prominence=0.02)
