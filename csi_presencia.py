@@ -1,4 +1,5 @@
 import collections
+import os
 import queue
 import sys
 import threading
@@ -11,13 +12,17 @@ from scipy.signal import find_peaks
 # NUEVO: del receptor se reutiliza lo que lee y valida las tramas del cable (CRC incluido)
 from csi_serial_receiver import Deframer, parse_csi, PUERTO, BAUD
 
-# Comentado mientras pruebas sin conexión a BD
 from db import guardar_medicion, sesionActiva
 
 # --- NUEVO: constantes del remuestreo ---
 FS = 20             # muestras por segundo parejas tras remuestrear (igual al fs=20 de más abajo)
 VENTANA_S = 30      # segundos de señal que se analizan (antes: 100 muestras ~ 4 s)
 MAX_HUECO_S = 2.0   # si pasan más segundos sin frames, se considera un corte
+
+# NUEVO: CSI crudo (carpeta junto a este archivo, un archivo por minuto)
+CARPETA_CRUDO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "datos_crudos")
+GUARDAR_CADA_S = 60
+CSI_HDR_LEN = 20    # bytes de header del frame CSI antes de los datos I/Q
 
 # CAMBIO: ahora guarda pares (tiempo_s, valor) y se recorta por tiempo, no por cantidad
 # (antes: collections.deque(maxlen=100) con solo valores)
@@ -82,7 +87,7 @@ def trabajadorBD():
       else:
           print("No hay sesión activa")
     except Exception as e:
-      print(f"Error guardando en BD: {e}")
+      print(f"Error guardando en BD ({type(e).__name__})")   # CAMBIO: mensaje corto
 
 
 threading.Thread(target=trabajadorBD, daemon=True).start()
@@ -107,8 +112,37 @@ def abrirSerial(puerto):
       time.sleep(3)
 
 
+# NUEVO: CSI crudo -> datos_crudos/AAAAMMDD_HHMMSS_0001.npz, uno por minuto
+#   iq   int8 (frames, 2*subportadoras), orden [imag, real, ...]:  z = iq[:, 1::2] + 1j * iq[:, 0::2]
+#   t_s  tiempo del ESP32 (s)      t_pc  hora de la PC (epoch UTC, para cruzar con el timestamp de Mongo)
+os.makedirs(CARPETA_CRUDO, exist_ok=True)
+prefijo = time.strftime("%Y%m%d_%H%M%S")
+lote = {"t_s": [], "t_pc": [], "seq": [], "rssi": [], "ruido": [], "iq": []}
+n_archivo = 0
+ultimo_volcado = time.time()
+
+
+def guardarLote():
+  global n_archivo
+  if not lote["t_s"]:
+    return
+  n_archivo += 1
+  np.savez_compressed(
+      os.path.join(CARPETA_CRUDO, f"{prefijo}_{n_archivo:04d}.npz"),
+      t_s=np.array(lote["t_s"], dtype=np.float64),
+      t_pc=np.array(lote["t_pc"], dtype=np.float64),
+      seq=np.array(lote["seq"], dtype=np.uint32),
+      rssi=np.array(lote["rssi"], dtype=np.int8),
+      ruido=np.array(lote["ruido"], dtype=np.int8),
+      iq=np.array(lote["iq"], dtype=np.int8),
+  )
+  for k in lote:
+    lote[k].clear()
+
+
 puerto = sys.argv[1] if len(sys.argv) > 1 else PUERTO    # python csi_presencia.py COM5
 print(f"Leyendo datos CSI por serial desde {puerto} a {BAUD} baud...")
+print(f"CSI crudo en: {CARPETA_CRUDO}")
 try:
   ser = abrirSerial(puerto)
 except KeyboardInterrupt:
@@ -158,17 +192,30 @@ while escuchando:
       valor = parseCsi(f)
       if valor is None:
         continue
-      buffer_temporal.append(((t_us + t_off) / 1e6, valor))
+      t_seg = (t_us + t_off) / 1e6
+      buffer_temporal.append((t_seg, valor))
       ultimo_frame_pc = time.time()
       # NUEVO: se descartan las muestras más viejas que la ventana
       while buffer_temporal[-1][0] - buffer_temporal[0][0] > VENTANA_S:
         buffer_temporal.popleft()
+
+      # NUEVO: CSI crudo
+      lote["t_s"].append(t_seg)
+      lote["t_pc"].append(ultimo_frame_pc)
+      lote["seq"].append(f["seq"])
+      lote["rssi"].append(f["rssi"])
+      lote["ruido"].append(f["ruido"])
+      lote["iq"].append(np.frombuffer(payload, dtype=np.int8, offset=CSI_HDR_LEN))
 
     # CAMBIO: el análisis corre una vez por segundo (antes corría con cada paquete y solo
     # se mostraba una vez por segundo; el resultado es el mismo)
     tiempo_actual = time.time()
     if tiempo_actual - ultimo_print >= 1.0:
       ultimo_print = tiempo_actual
+
+      if tiempo_actual - ultimo_volcado >= GUARDAR_CADA_S:   # NUEVO: cada minuto a disco
+        guardarLote()
+        ultimo_volcado = tiempo_actual
 
       if not buffer_temporal:
         onda, motivo = None, "todavía no llegan frames CSI"
@@ -191,7 +238,7 @@ while escuchando:
       # Muestra los datos en consola cada vez que calcula
       print(f"Presencia: {presencia} | RPM: {rpm}")
 
-      # Lógica de BD (descomentar cuando tengas conexión a Internet/MongoDB)
+      # Lógica de BD
       tiempo_actual = time.time()
       if tiempo_actual - ultimo_guardado >= 1.0:
            ultimo_guardado = tiempo_actual
@@ -207,6 +254,7 @@ while escuchando:
   except OSError as e:
     # NUEVO: el cable se desconectó o el puerto dejó de responder
     print(f"Se perdió la conexión con {puerto}: {e}")
+    guardarLote()
     try:
       ser.close()
     except Exception:
@@ -229,3 +277,6 @@ try:
   ser.close()
 except Exception:
   pass
+
+guardarLote()                             # NUEVO: lo que quedaba del CSI crudo
+print("CSI crudo guardado.")
