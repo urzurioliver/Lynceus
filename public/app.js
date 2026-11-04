@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000";
+const API_URL = "http://lynceus-psi.vercel.app";
 let livePollInterval = null;
 let currentSelectedSessionId = null;
 let sessionsData = [];

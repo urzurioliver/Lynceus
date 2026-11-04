@@ -32,7 +32,6 @@ buffer_temporal = collections.deque()
 # no se atrasa (con serial, un atraso largo haría perder frames).
 cola_bd = queue.Queue(maxsize=10)
 
-
 def parseCsi(f):
   # CAMBIO: ya no recibe bytes de un paquete UDP. Recibe el frame decodificado por
   # csi_receiver.parse_csi (f["z"] = subportadoras complejas, con real/imag en el orden correcto).
@@ -87,7 +86,7 @@ def trabajadorBD():
       else:
           print("No hay sesión activa")
     except Exception as e:
-      print(f"Error guardando en BD ({type(e).__name__})")   # CAMBIO: mensaje corto
+      print(f"Error guardando en BD ({e})")   # CAMBIO: mensaje corto
 
 
 threading.Thread(target=trabajadorBD, daemon=True).start()
